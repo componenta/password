@@ -77,3 +77,5 @@ Keep policy decisions such as minimum password length and breach checks in valid
 | `componenta/di` | Can bind `PasswordHasherInterface` and `PasswordVerifierInterface` in the application container. |
 
 For new deployments prefer Argon2id where available. Bcrypt remains the explicit default for compatibility, but passwords over 72 bytes or containing NUL are rejected by hashing and verification. Existing users with longer bcrypt passwords need a trusted password-reset flow; silently truncating them is not safe. `PasswordRehashDeciderInterface` exposes the rehash decision independently of hashing and verification.
+
+Configuration is snapshotted by value, including referenced array entries. Argon2 bounds are checked against effective defaults; the sodium provider does not support explicit `threads`. Provider-specific constraints and operational resource limits still apply.

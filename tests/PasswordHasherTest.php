@@ -54,3 +54,23 @@ it('rejects invalid hashing configuration at construction', function (): void {
         ->and(fn () => new PasswordHasher(options: ['cost' => 3]))->toThrow(\InvalidArgumentException::class)
         ->and(fn () => new PasswordHasher(options: ['memory_cost' => 8192]))->toThrow(\InvalidArgumentException::class);
 });
+
+it('does not retain references to mutable caller configuration', function (): void {
+    $cost = 4;
+    $options = ['cost' => &$cost];
+    $hasher = new PasswordHasher(options: $options);
+    $cost = 5;
+    expect($hasher->options)->toBe(['cost' => 4])
+        ->and(password_get_info($hasher->hash('secret'))['options']['cost'])->toBe(4);
+});
+
+it('validates Argon2 parameters against effective default options', function (): void {
+    if (!in_array('argon2id', password_algos(), true)) {
+        $this->markTestSkipped('Argon2id is unavailable.');
+    }
+
+    expect(fn () => new PasswordHasher('argon2id', ['memory_cost' => 1]))
+        ->toThrow(\InvalidArgumentException::class)
+        ->and(fn () => new PasswordHasher('argon2id', ['threads' => intdiv(PASSWORD_ARGON2_DEFAULT_MEMORY_COST, 8) + 1]))
+        ->toThrow(\InvalidArgumentException::class);
+});

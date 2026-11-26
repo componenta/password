@@ -9,9 +9,12 @@ use SensitiveParameter;
 
 final readonly class PasswordHasher implements PasswordHasherInterface, PasswordVerifierInterface, PasswordRehashDeciderInterface
 {
+    public string $algorithm;
+    public array $options;
+
     public function __construct(
-        private(set) string $algorithm = PASSWORD_BCRYPT,
-        private(set) array $options = [],
+        string $algorithm = PASSWORD_BCRYPT,
+        array $options = [],
     ) {
         if (!in_array($algorithm, password_algos(), true)) {
             throw new InvalidArgumentException('Unsupported password hashing algorithm.');
@@ -21,10 +24,12 @@ final readonly class PasswordHasher implements PasswordHasherInterface, Password
             ? ['cost']
             : ['memory_cost', 'time_cost', 'threads'];
 
+        $snapshot = [];
         foreach ($options as $name => $value) {
             if (!in_array($name, $allowed, true) || !is_int($value) || $value < 1) {
                 throw new InvalidArgumentException('Invalid password hashing option.');
             }
+            $snapshot[$name] = $value;
         }
 
         if ($algorithm === PASSWORD_BCRYPT && isset($options['cost'])
@@ -32,10 +37,24 @@ final readonly class PasswordHasher implements PasswordHasherInterface, Password
             throw new InvalidArgumentException('Bcrypt cost must be between 4 and 31.');
         }
 
-        if ($algorithm !== PASSWORD_BCRYPT && isset($options['memory_cost'])
-            && $options['memory_cost'] < 8 * ($options['threads'] ?? 1)) {
-            throw new InvalidArgumentException('Argon2 memory cost is too small for the requested threads.');
+        if ($algorithm !== PASSWORD_BCRYPT) {
+            $memory = $snapshot['memory_cost'] ?? PASSWORD_ARGON2_DEFAULT_MEMORY_COST;
+            $time = $snapshot['time_cost'] ?? PASSWORD_ARGON2_DEFAULT_TIME_COST;
+            $threads = $snapshot['threads'] ?? PASSWORD_ARGON2_DEFAULT_THREADS;
+
+            if (defined('PASSWORD_ARGON2_PROVIDER') && PASSWORD_ARGON2_PROVIDER === 'sodium'
+                && isset($snapshot['threads'])) {
+                throw new InvalidArgumentException('The sodium Argon2 provider does not support the threads option.');
+            }
+
+            if ($threads > 0xffffff || $time > 0xffffffff || $memory > 0xffffffff
+                || $threads > intdiv($memory, 8)) {
+                throw new InvalidArgumentException('Argon2 options exceed supported parameter bounds.');
+            }
         }
+
+        $this->algorithm = $algorithm;
+        $this->options = $snapshot;
     }
 
     #[\Override]
