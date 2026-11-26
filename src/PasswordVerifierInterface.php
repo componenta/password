@@ -9,5 +9,5 @@ interface PasswordVerifierInterface
     /**
      * Verifies a password against a hash.
      */
-    public function verify(string $password, string $hash): bool;
+    public function verify(#[\SensitiveParameter] string $password, string $hash): bool;
 }

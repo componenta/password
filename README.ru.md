@@ -75,3 +75,5 @@ interface PasswordVerifierInterface
 | `componenta/auth` | Использует password-контракты в login/reset flow. |
 | `componenta/validation` | Проверяет пароль до хэширования. |
 | `componenta/di` | Может зарегистрировать `PasswordHasherInterface` и `PasswordVerifierInterface` в контейнере приложения. |
+
+Для новых развёртываний рекомендуется Argon2id при наличии поддержки. Bcrypt сохраняется по умолчанию ради совместимости; пароли длиннее 72 байт или содержащие NUL отклоняются при хешировании и проверке. Для ранее созданных bcrypt-хешей длинных паролей требуется безопасный сброс пароля. При смене алгоритма его параметры сбрасываются. Решение о необходимости перехеширования доступно через PasswordRehashDeciderInterface.

@@ -9,5 +9,5 @@ interface PasswordHasherInterface
     /**
      * Hashes a plain-text password.
      */
-    public function hash(string $password): string;
+    public function hash(#[\SensitiveParameter] string $password): string;
 }

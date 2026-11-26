@@ -33,7 +33,7 @@ $argon = $hasher->withAlgorithm(PASSWORD_ARGON2ID);
 $stronger = $hasher->withOptions(['cost' => 13]);
 ```
 
-`withAlgorithm()` and `withOptions()` return new immutable instances.
+`withAlgorithm()` and `withOptions()` return new immutable instances. Changing the algorithm resets its options; supply new options with `withOptions()`. The constructor validates the supported algorithm and option names.
 
 ## Contracts
 
@@ -75,3 +75,5 @@ Keep policy decisions such as minimum password length and breach checks in valid
 | `componenta/auth` | Uses the password contracts in password-login and reset flows. |
 | `componenta/validation` | Validates password length and complexity before hashing. |
 | `componenta/di` | Can bind `PasswordHasherInterface` and `PasswordVerifierInterface` in the application container. |
+
+For new deployments prefer Argon2id where available. Bcrypt remains the explicit default for compatibility, but passwords over 72 bytes or containing NUL are rejected by hashing and verification. Existing users with longer bcrypt passwords need a trusted password-reset flow; silently truncating them is not safe. `PasswordRehashDeciderInterface` exposes the rehash decision independently of hashing and verification.
